@@ -9,6 +9,7 @@ import {
   shuffleSongAction,
   currentSongAction,
 } from "../redux/actions/musicActions";
+import { formatTime } from "../utils/helpers";
 
 export const AudioPlayer = ({ navigation }) => {
   const dispatch = useDispatch();
@@ -26,8 +27,6 @@ export const AudioPlayer = ({ navigation }) => {
   useEffect(() => {
     if (currentSong) {
       playSound(currentSong);
-    } else {
-      navigation.navigate("AudioList");
     }
   }, []);
 
@@ -47,15 +46,19 @@ export const AudioPlayer = ({ navigation }) => {
           setDuration(status.durationMillis);
           setSliderValue(status.positionMillis / status.durationMillis);
         }
+        if (status.didJustFinish) {
+          if (repeatSong) {
+            playSound(currentSong);
+          } else {
+            handleNext(shuffleSong);
+          }
+        }
       });
     }
-  }, [sound]);
+  }, [sound, repeatSong, shuffleSong]);
 
   const playSound = async (audioData) => {
-    const { sound } = await Audio.Sound.createAsync(
-      { uri: audioData.uri },
-      { isLooping: repeatSong }
-    );
+    const { sound } = await Audio.Sound.createAsync({ uri: audioData.uri });
     if (sound) {
       await sound.playAsync();
       setSound(sound);
@@ -69,14 +72,10 @@ export const AudioPlayer = ({ navigation }) => {
       setIsPlaying(true);
     }
   };
+
   const pauseSound = async () => {
     await sound.pauseAsync();
     setIsPlaying(false);
-  };
-  const formatTime = (timeMillis) => {
-    const minutes = Math.floor(timeMillis / 60000);
-    const seconds = ((timeMillis % 60000) / 1000).toFixed(0);
-    return `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
   };
 
   const handleSliderChange = (value) => {
@@ -88,12 +87,58 @@ export const AudioPlayer = ({ navigation }) => {
     }
   };
 
-  const handleNext = () => {
-    let total = allSongs.length;
-    const random = Math.random();
-    const scaledRandom = 0 + Math.floor(random * (total - 0 + 1));
-    dispatch(currentSongAction(allSongs[scaledRandom]));
-    playSound(allSongs[scaledRandom]);
+  const handleNext = (shuffle) => {
+    let songToPlay;
+    if (shuffle) {
+      let total = allSongs.length;
+      const random = Math.random();
+      const scaledRandom = 0 + Math.floor(random * (total - 0 + 1));
+
+      songToPlay = allSongs[scaledRandom];
+    } else {
+      const currentSongIndex = allSongs.findIndex(
+        (song) => song.filename === currentSong.filename
+      );
+
+      if (currentSongIndex !== -1) {
+        const nextSongIndex = (currentSongIndex + 1) % allSongs.length;
+
+        songToPlay = allSongs[nextSongIndex];
+      }
+    }
+    if (songToPlay) {
+      dispatch(currentSongAction(songToPlay));
+      playSound(songToPlay);
+    }
+  };
+
+  const handlePrevious = () => {
+    let nextSongToPlay;
+    if (shuffleSong) {
+      const currentSongIndex = allSongs.findIndex(
+        (song) => song.filename === currentSong.filename
+      );
+
+      if (currentSongIndex !== -1) {
+        const nextSongIndex = (currentSongIndex - 1) % allSongs.length;
+
+        nextSongToPlay = allSongs[nextSongIndex];
+      }
+    } else {
+      const currentSongIndex = allSongs.findIndex(
+        (song) => song.filename === currentSong.filename
+      );
+
+      if (currentSongIndex !== -1) {
+        const nextSongIndex = (currentSongIndex - 1) % allSongs.length;
+
+        nextSongToPlay = allSongs[nextSongIndex];
+      }
+    }
+    if (nextSongToPlay) {
+      dispatch(currentSongAction(nextSongToPlay));
+      playSound(nextSongToPlay);
+    }
   };
 
   return (
@@ -101,16 +146,16 @@ export const AudioPlayer = ({ navigation }) => {
       <View style={styles.mainbar}>
         <AntDesign
           name="down"
-          size={20}
+          size={30}
           style={{ marginLeft: "5%" }}
           onPress={() => navigation.navigate("AudioList")}
         />
-        <Text style={styles.now_playing_text}> Now Playing </Text>
-        <Entypo
+        <Text style={styles.now_playing_text}>Now Playing</Text>
+        {/* <Entypo
           name="dots-three-vertical"
           size={20}
-          style={{ marginLeft: "30%" }}
-        />
+          style={{ marginLeft: "20%" }}
+        /> */}
       </View>
 
       <View style={styles.music_logo_view}>
@@ -154,6 +199,7 @@ export const AudioPlayer = ({ navigation }) => {
           color="#e75480"
           style={{ marginLeft: "12%" }}
           name="controller-fast-backward"
+          onPress={handlePrevious}
         />
         <AntDesign
           size={50}
@@ -173,7 +219,7 @@ export const AudioPlayer = ({ navigation }) => {
           color="#e75480"
           name="controller-fast-forward"
           style={{ marginLeft: "12%" }}
-          onPress={handleNext}
+          onPress={() => handleNext(shuffleSong)}
         />
         <MaterialIcons
           size={25}
@@ -203,8 +249,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   now_playing_text: {
-    fontSize: 19,
-    marginLeft: "24%",
+    fontSize: 22,
+    marginLeft: "22%",
   },
   music_logo_view: {
     height: "30%",
@@ -218,14 +264,13 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   name_of_song_View: {
-    height: "15%",
-    width: "100%",
-    alignItems: "center",
-    justifyContent: "center",
+    width: "80%",
+    alignSelf: "center",
   },
   name_of_song_Text1: {
     fontSize: 19,
     fontWeight: "500",
+    textAlign: "center",
   },
   name_of_song_Text2: {
     color: "#808080",
@@ -240,7 +285,7 @@ const styles = StyleSheet.create({
   },
   slider_style: {
     height: "70%",
-    width: "60%",
+    width: "67%",
   },
   slider_time: {
     fontSize: 15,
