@@ -19,7 +19,8 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.salman1234567890.MusicPlayer"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -28,7 +29,14 @@
       "READ_EXTERNAL_STORAGE",
       "WRITE_EXTERNAL_STORAGE",
       "MEDIA_LIBRARY",
-      "MEDIA_PLAYBACK"
-    ]
+      "MEDIA_PLAYBACK",
+      "AUDIO_RECORDING",
+      "CAMERA_ROLL"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "022761eb-bcfb-454c-bc1b-9a6fb466842f"
+      }
+    }
   }
 }

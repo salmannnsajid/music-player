@@ -28,6 +28,14 @@ export const AudioListScreen = ({ navigation }) => {
       </TouchableOpacity>
     );
   });
+
+  if (!songsList.length) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <Text>No items exist</Text>
+      </View>
+    );
+  }
   return (
     <View style={styles.container}>
       {isPermissionGranted ? (
